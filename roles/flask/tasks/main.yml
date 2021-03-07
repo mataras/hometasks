@@ -1,0 +1,95 @@
+---
+- name: Install python3 pip curl
+  apt:
+    pkg: "{{pkgs}}"
+    update_cache: yes
+
+- name: Install  python modules 
+  pip:
+    name: "{{pip_modules}}" 
+
+- name: Flush existing firewall rules
+  iptables:
+    flush: true
+
+- name: Firewall rule - allow all loopback traffic
+  iptables:
+    action: append
+    chain: INPUT
+    in_interface: lo
+    jump: ACCEPT
+
+- name: Firewall rule - allow established connections
+  iptables:
+    chain: INPUT
+    ctstate: ESTABLISHED,RELATED
+    jump: ACCEPT
+
+- name: Firewall rule - allow port ping traffic
+  iptables:
+    chain: INPUT
+    jump: ACCEPT
+    protocol: icmp
+
+- name: Firewall rule - allow ports 22/SSH, 80/HTTP, 443/HTTPS traffic
+  iptables:
+    chain: INPUT
+    destination_port: "{{item}}"
+    jump: ACCEPT
+    protocol: tcp
+  with_items: "{{ports}}"
+
+- name: Firewall rule - drop any traffic without rule
+  iptables:
+    chain: INPUT
+    jump: DROP
+
+- name: Install `netfilter-persistent` && `iptables-persistent` packages
+  package:
+    name: "{{item}}"
+    state: present
+  with_items:
+   - iptables-persistent
+   - netfilter-persistent
+
+- name: Update sshd configuration safely, avoid locking yourself out
+  ansible.builtin.template:
+    src: "sshd_config.j2"
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: '0600'
+    validate: /usr/sbin/sshd -t -f %s
+    backup: yes
+  notify: Restart service sshd  
+  
+- name: Copy python file with owner and permissions
+  ansible.builtin.copy:
+    src: flaskapp.py
+    dest: "{{flask_dest}}"
+    owner: mataras
+    group: mataras
+    mode: '0300'
+   
+- name: Copy systemd service-file
+  ansible.builtin.template:
+    src: "python_flask.service.j2"
+    dest: /etc/systemd/system/python_flask.service
+    owner: root
+    group: root
+    mode: '0500' 
+
+- name: Start service with flask app and enable to start on boot  
+  ansible.builtin.systemd:
+    name: python_flask
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Check connection using curl and print output 
+  ansible.builtin.shell: |
+          curl -XPOST -d'{"word":"evilmartian", "count": 3}' http://localhost
+  register: curl_output
+  failed_when: "'evilmartian' not in curl_output.stdout"
+- debug:
+    var: curl_output.stdout

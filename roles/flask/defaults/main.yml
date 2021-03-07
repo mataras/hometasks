@@ -1,0 +1,20 @@
+---
+pkgs:
+- python3
+- python3-pip
+- curl
+
+pip_modules:
+- flask
+- emoji
+
+ports:
+- 22
+- 80
+- 443
+
+flask_dest: "/opt"
+
+root_login: "PermitRootLogin no"
+
+pubkey_auth: "PubkeyAuthentication  yes"

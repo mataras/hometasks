@@ -1,0 +1,7 @@
+---
+- hosts: all
+  user: mataras
+  become: true
+  become_user: root
+  roles:
+    - flask
