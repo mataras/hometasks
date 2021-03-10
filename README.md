@@ -26,6 +26,11 @@ rm output
 
 ## 3rd bash task --- github_script.sh 
 
+The script can take GitHub repository URL as argument, e.g:  
+`./github_script.sh https://github.com/curl/curl`
+
+If it called without any arguments, then `https://github.com/orkestral/venom` is used by default.
+
 ```sh
 #Download JSON file with pull requests info 
 curl   -H "Accept: application/vnd.github.v3+json"   https://api.github.com/repos/orkestral/venom/pulls > ./test.json
