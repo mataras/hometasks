@@ -19,8 +19,6 @@ api_pulls_url="https://api.github.com/repos/${user_name}/${repo_name}/pulls?per_
 
 curl -s  -H "Accept: application/vnd.github.v3+json"   "$api_pulls_url" > ./test.json
 
-
-
 if [ -z "$(jq '.[].number' test.json)" ]; then
   printf "There is no pull requests in this repo"
 
